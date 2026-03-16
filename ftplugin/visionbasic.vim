@@ -2,6 +2,7 @@
 " Language:    Vision BASIC (C64 enhanced BASIC)
 " Maintainer:  Tom
 " Last Change: 2026
+scriptencoding utf-8
 
 if exists('b:did_ftplugin')
   finish
@@ -53,7 +54,9 @@ function! s:CheckAsmMode()
     echo 'Tip: Switch to BASIC comment mode with <LocalLeader>c'
   endif
 endfunction
-autocmd CursorMoved <buffer> call s:CheckAsmMode()
+augroup visionbasic_asmhint
+  autocmd! CursorMoved <buffer> call s:CheckAsmMode()
+augroup END
 
 " ─── Auto-Uppercase Keywords ──────────────────────────────────────────────────
 " After leaving insert mode, uppercase all Vision BASIC keywords on the
@@ -117,7 +120,9 @@ function! s:UppercaseKeywords()
   call setpos('.', l:save_pos)
 endfunction
 
-autocmd InsertLeave <buffer> call s:UppercaseKeywords()
+augroup visionbasic_uppercase
+  autocmd! InsertLeave <buffer> call s:UppercaseKeywords()
+augroup END
 
 " ─── Cleanup ──────────────────────────────────────────────────────────────────
 let &cpo = s:save_cpo

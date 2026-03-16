@@ -3,6 +3,7 @@
 " Maintainer:  Tom
 " Last Change: 2026
 " Based on:    DNSGeek Vision BASIC Cheat Sheet
+scriptencoding utf-8
 
 if exists('b:current_syntax')
   finish
