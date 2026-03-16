@@ -3,7 +3,7 @@
 " Maintainer:  Tom
 " Last Change: 2026
 
-if exists("b:did_ftplugin")
+if exists('b:did_ftplugin')
   finish
 endif
 let b:did_ftplugin = 1
@@ -25,7 +25,7 @@ setlocal commentstring=REM\ %s
 
 " ─── Comment Toggle ───────────────────────────────────────────────────────────
 " Track current mode: 0 = BASIC (REM), 1 = ML (;)
-if !exists("b:vb_ml_mode")
+if !exists('b:vb_ml_mode')
   let b:vb_ml_mode = 0
 endif
 
@@ -33,11 +33,11 @@ function! s:ToggleVBCommentMode()
   if b:vb_ml_mode == 0
     let b:vb_ml_mode = 1
     setlocal commentstring=;\ %s
-    echo "Vision BASIC: ML comment mode (;)"
+    echo 'Vision BASIC: ML comment mode (;)'
   else
     let b:vb_ml_mode = 0
     setlocal commentstring=REM\ %s
-    echo "Vision BASIC: BASIC comment mode (REM)"
+    echo 'Vision BASIC: BASIC comment mode (REM)'
   endif
 endfunction
 
@@ -48,9 +48,9 @@ nnoremap <buffer> <LocalLeader>c :call <SID>ToggleVBCommentMode()<CR>
 function! s:CheckAsmMode()
   let l:line = getline('.')
   if l:line =~? '\<ASSEM\>'
-    echo "Tip: Switch to ML comment mode with <LocalLeader>c"
+    echo 'Tip: Switch to ML comment mode with <LocalLeader>c'
   elseif l:line =~? '\<BASIC\>'
-    echo "Tip: Switch to BASIC comment mode with <LocalLeader>c"
+    echo 'Tip: Switch to BASIC comment mode with <LocalLeader>c'
   endif
 endfunction
 autocmd CursorMoved <buffer> call s:CheckAsmMode()
