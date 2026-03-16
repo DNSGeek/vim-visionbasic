@@ -4,7 +4,7 @@
 " Last Change: 2026
 " Based on:    DNSGeek Vision BASIC Cheat Sheet
 
-if exists("b:current_syntax")
+if exists('b:current_syntax')
   finish
 endif
 
@@ -136,4 +136,4 @@ highlight default link vbMLSafe       Statement
 highlight default link vbSpecial      Operator
 highlight default link vbPi           Constant
 
-let b:current_syntax = "visionbasic"
+let b:current_syntax = 'visionbasic'
