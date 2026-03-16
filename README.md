@@ -45,24 +45,24 @@ nnoremap <leader>vb :set filetype=visionbasic<CR>
 
 Distinct highlighting groups for:
 
-| Group | Examples |
-|---|---|
-| Editing keywords | `LIST`, `RUN`, `COMP`, `RENUM` |
-| Disk commands | `LOAD`, `SAVE`, `DIR`, `DISK` |
-| Math functions | `ABS`, `INT`, `RND`, `RANDOM` |
-| Speedy math | `INC`, `DEC`, `ADD`, `SUBTRACT` |
-| Bitmap commands | `PLOT`, `LINE`, `HLINE`, `VLINE` |
-| Sprite/MOB commands | `MOB`, `MOBXY`, `SHAPE`, `COLLISION` |
-| Interrupt commands | `INTERRUPT`, `STARTINT`, `HALTINT` |
-| SID sound commands | `VOICE`, `FREQ`, `ADSR`, `WAVE` |
-| Text video commands | `COLORS`, `CHARSET`, `PANX`, `VIDLOC` |
-| Assembler blocks | `[LDA #1: STA $D020]` highlighted separately |
-| 6502 mnemonics | All standard 6502 opcodes inside `[]` |
-| Strings | `"quoted strings"` |
-| String variables | `NAME$`, `SCORE$` |
-| Hex numbers | `$D020`, `$FF00` |
-| Line numbers | Leading digits on each line |
-| Comments | `REM ...` and `; ...` (ML mode) |
+| Group               | Examples                                     |
+| ------------------- | -------------------------------------------- |
+| Editing keywords    | `LIST`, `RUN`, `COMP`, `RENUM`               |
+| Disk commands       | `LOAD`, `SAVE`, `DIR`, `DISK`                |
+| Math functions      | `ABS`, `INT`, `RND`, `RANDOM`                |
+| Speedy math         | `INC`, `DEC`, `ADD`, `SUBTRACT`              |
+| Bitmap commands     | `PLOT`, `LINE`, `HLINE`, `VLINE`             |
+| Sprite/MOB commands | `MOB`, `MOBXY`, `SHAPE`, `COLLISION`         |
+| Interrupt commands  | `INTERRUPT`, `STARTINT`, `HALTINT`           |
+| SID sound commands  | `VOICE`, `FREQ`, `ADSR`, `WAVE`              |
+| Text video commands | `COLORS`, `CHARSET`, `PANX`, `VIDLOC`        |
+| Assembler blocks    | `[LDA #1: STA $D020]` highlighted separately |
+| 6502 mnemonics      | All standard 6502 opcodes inside `[]`        |
+| Strings             | `"quoted strings"`                           |
+| String variables    | `NAME$`, `SCORE$`                            |
+| Hex numbers         | `$D020`, `$FF00`                             |
+| Line numbers        | Leading digits on each line                  |
+| Comments            | `REM ...` and `; ...` (ML mode)              |
 
 ### Auto-Uppercase Keywords
 
@@ -73,6 +73,7 @@ get proper BASIC ALL-CAPS output. Very authentic.
 ### Comment Mode Toggle
 
 Vision BASIC has two comment styles:
+
 - **BASIC mode**: `REM this is a comment`
 - **ML/Assembler mode**: `; this is a comment`
 
