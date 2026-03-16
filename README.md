@@ -1,7 +1,6 @@
 # vim-visionbasic
 
-Vim syntax highlighting and filetype plugin for **Vision BASIC** — the enhanced
-Commodore 64 BASIC environment by DNSGeek.
+Vim syntax highlighting and filetype plugin for [VisionBASIC](https://visionbasic.net).
 
 ## Installation
 
