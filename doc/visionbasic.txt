@@ -1,0 +1,1826 @@
+*visionbasic.txt*  Vision BASIC support for Vim — the compiled BASIC for the C64
+
+                    VISION BASIC — REFERENCE MANUAL
+
+Syntax highlighting, keyword documentation, completion and line-number tooling
+for Vision BASIC 1.1 by Dennis Osborn. https://www.visionbasic.net
+
+Keyword reference generated from the C64 IDE VisionBASIC plugin definition:
+token values from the table at $AC31 in VISION BASIC.VEX, documentation from
+the Vision BASIC Cheat Sheet.
+
+CONTENTS                                              *visionbasic-contents*
+
+  1. Filetype detection ............... |visionbasic-detection|
+  2. Commands ......................... |visionbasic-commands|
+  3. Mappings ......................... |visionbasic-mappings|
+  4. Options .......................... |visionbasic-options|
+  5. Completion ....................... |visionbasic-completion|
+  6. Highlight groups ................. |visionbasic-highlight|
+  7. Language quirks .................. |visionbasic-quirks|
+  8. Keyword reference ................ |visionbasic-keywords|
+
+==============================================================================
+1. Filetype detection                                  *visionbasic-detection*
+
+Vision BASIC sources normally use the .bas extension, which is also claimed by
+Visual Basic, QBasic, FreeBASIC, CBM BASIC and others — and both Vim and
+Neovim ship a guess of their own for it. So a .bas file is only claimed when
+its first 100 lines contain a keyword that exists in Vision BASIC and
+essentially nowhere else (MOBXY, BMPCLR, HALTINT, REUPEEK, ASSEM and the
+like). The .vb64 and .vbas extensions are claimed outright.
+
+A filetype you chose yourself — in a modeline or by hand — is never overruled;
+only Vim's own generic BASIC guesses are.
+
+                                                *g:visionbasic_claim_bas*
+To take over every .bas file regardless of content: >
+
+    let g:visionbasic_claim_bas = 1
+<
+To leave .bas files entirely alone: >
+
+    let g:visionbasic_claim_bas = 0
+<
+Either way you can always set the filetype by hand: >
+
+    :setfiletype visionbasic
+<
+or with a modeline in the listing itself: >
+
+    10 REM vim: set filetype=visionbasic :
+<
+==============================================================================
+2. Commands                                             *visionbasic-commands*
+
+:VBDoc [{keyword}]                                                    *:VBDoc*
+    Show the reference entry for {keyword}, or for the word under the cursor,
+    in a preview window. Completes on every Vision BASIC keyword and 6502
+    mnemonic.
+
+:VBCommentMode                                                *:VBCommentMode*
+    Toggle 'commentstring' between REM (BASIC mode) and ; (machine language
+    mode). Vision BASIC uses both, and 'commentstring' can only hold one.
+
+:VBNumber [{start}] [{step}]                                       *:VBNumber*
+    Add line numbers to the unnumbered lines in the range, starting at {start}
+    (default 10) and counting up by {step} (default 10). Lines that already
+    carry a number are left alone. Defaults to the whole file.
+
+:VBRenumber [{start}] [{step}]                                   *:VBRenumber*
+    Renumber every numbered line in the buffer and follow the references:
+    GOTO, GOSUB, THEN and ELSE targets, the line numbers of DESC, TRAP and DO,
+    the second argument of INTERRUPT (the first is a raster line, not a line
+    number) and the target of POINT. Text inside REM and ; comments is left
+    untouched.
+
+:VBUppercase                                                    *:VBUppercase*
+    Fold the Vision BASIC keywords and 6502 mnemonics in the range up to upper
+    case, leaving string literals, comments and your own variable names alone.
+    Defaults to the whole file.
+
+==============================================================================
+3. Mappings                                             *visionbasic-mappings*
+
+K                       Show the reference entry for the keyword under the
+                        cursor (see |:VBDoc|). Only mapped if you have not
+                        already mapped K yourself.
+
+<LocalLeader>c          Toggle BASIC/ML comment mode (see |:VBCommentMode|).
+
+<LocalLeader>u          Upper-case the keywords in the buffer (|:VBUppercase|).
+
+With 'matchit' loaded, % jumps between FOR/NEXT, PROC/RETURN, STARTINT/INTEND,
+LOCAL/GLOBAL, ASSEM/BASIC and MODULE/MODULE END.
+
+==============================================================================
+4. Options                                               *visionbasic-options*
+
+                                          *g:visionbasic_auto_uppercase*
+Vision BASIC listings are traditionally upper case. By default, leaving insert
+mode folds the keywords on the current line up to upper case — type in lower
+case, get a proper listing. Strings, comments and your own identifiers are
+left as typed. To turn this off: >
+
+    let g:visionbasic_auto_uppercase = 0
+<
+|:VBUppercase| still works when the automatic pass is disabled.
+
+                                          *visionbasic-statusline*
+The current comment mode is available for a statusline: >
+
+    set statusline+=%{visionbasic#mode()}
+<
+==============================================================================
+5. Completion                                         *visionbasic-completion*
+
+'omnifunc' is set to visionbasic#complete, so CTRL-X CTRL-O completes Vision
+BASIC keywords, with the syntax line in the popup menu and the full reference
+entry in the preview window. Inside a [...] machine language block it
+completes 6502 mnemonics instead.
+
+Keywords Vision BASIC does not implement — the BASIC V2 leftovers USR, FRE,
+POS, SQR, LOG, EXP, COS, SIN, TAN and ATN — are marked "x" in the menu.
+
+==============================================================================
+6. Highlight groups                                    *visionbasic-highlight*
+
+Every group links to a standard group by default, so it follows your colour
+scheme. Override any of them with :highlight link.
+
+  vbLineNumber         leading line number of a listing line
+  vbLineRef            line number used as a GOTO/GOSUB/THEN/ELSE target
+  vbComment            REM comment
+  vbMLComment          ; comment in machine language context
+  vbString             string literal
+  vbPetscii            {...} PETSCII escape inside a string
+  vbStringVar          string variable (NAME$)
+  vbHexNumber          $D020
+  vbBinNumber          %10101010
+  vbAsmBlock           [...] machine language block
+  vbAsmMnemonic        6502 mnemonic inside a block
+  vbAsmDelimiter       the [ and ] themselves
+  vbLabelDef           name introduced by DESC, TAG, LABEL or PROC
+  vbProcCall           named subroutine call (DRAWBOX.X,Y)
+  vbUnimplemented      BASIC V2 keyword Vision BASIC does not implement
+  vbEditKeyword        editor and compiler commands
+  vbAsmKeyword         ASSEM, BASIC, START, LABEL, SYS
+  vbConditional        IF, THEN, ELSE
+  vbRepeat             FOR, NEXT, TO, STEP, DO
+  vbStatement          program flow
+  vbType               variable declaration and scope
+  vbOperator           AND, OR, EOR, NOT
+  vbMathKeyword        math commands and functions
+  vbStringFunc         string functions
+  vbGraphicsKeyword    bitmap and sprite commands
+  vbSoundKeyword       SID commands
+  vbScreenKeyword      text screen commands
+  vbMemoryKeyword      memory and expansion RAM commands
+  vbIOKeyword          disk, file and input commands
+  vbSystemKeyword      system, timing and interrupt commands
+
+==============================================================================
+7. Language quirks                                        *visionbasic-quirks*
+
+Parentheses are NOT allowed in math expressions and there is no operator
+precedence: expressions evaluate strictly left to right. 4+3*5-2*6 is
+(((4+3)*5)-2)*6 = 198.
+
+Variable names start with a letter, are significant to 8 characters, and may
+contain !@#%&? and digits. A name may contain a keyword but may not start with
+one. String variables end in $. Variables are integers unless declared
+DECIMAL.
+
+Machine language is entered with ASSEM and left with BASIC. Mnemonics are
+wrapped in [] brackets, statements inside them are separated by ":", and ";"
+starts a comment. Branches and jumps may target a BASIC line number directly,
+e.g. JMP1000.
+
+These commands stay usable inside an ASSEM block:
+
+  START, GOTO, GOSUB, RETURN, REM, TAG, PROC, MODULE
+  LOCAL, GLOBAL, ADD, SUBTRACT, COMPARE, HALF, DOUBLE, VARIABLES
+  HALT, RESUME, VERSION, DEBUG, STARTINT, RASTER, BYTES, STRINGS
+
+VOICE must be called before FREQ, PULSE, ADSR and WAVE — they all act on the
+current voice.
+
+Always HALTINT before your program exits, or the machine is left running your
+raster interrupt.
+
+Strings and string variables cannot be returned from subroutines.
+
+==============================================================================
+8. Keyword reference                                    *visionbasic-keywords*
+
+Every entry is also reachable from the buffer with K or |:VBDoc|.
+
+
+------------------------------------------------------------------------------
+ASSEMBLER MODE
+------------------------------------------------------------------------------
+
+ASSEM                                                      *visionbasic-ASSEM*
+    Switches into assembler mode. Following lines are assembled as 6502
+    machine language until BASIC switches back.
+
+    Example: ASSEM
+
+    In ML mode, mnemonics are enclosed in [] brackets and a semicolon (;)
+    starts a comment, e.g. 100 [LDA1: ORA #1: STA1] ; TURN BASIC ROM ON.
+    Branches and jumps take a line number directly, e.g. JMP1000.
+
+    Note: In ML mode mnemonics are wrapped in `[]` and `;` starts a comment.
+    Branches and jumps may target a BASIC line number directly, e.g.
+    `JMP1000`.
+
+BASIC                                                      *visionbasic-BASIC*
+    Switches out of assembler mode and back into BASIC.
+
+    Example: BASIC
+
+LABEL label [= vov]                                        *visionbasic-LABEL*
+    Identical to TAG. Creates a label that can be used in place of a value or
+    address.
+
+    Example: LABEL SCREEN = 1024
+
+    Tags and variables can be used in place of values and addresses in ML
+    mode. Commands that are ML-safe: START, GOTO, GOSUB, RETURN, REM, TAG,
+    PROC, MODULE, LOCAL, GLOBAL, ADD, SUBTRACT, COMPARE, HALF, DOUBLE,
+    VARIABLES, HALT, RESUME, VERSION, DEBUG, STARTINT, RASTER, BYTES and
+    STRINGS.
+
+START [*=] address                                         *visionbasic-START*
+    Specifies the starting location for an ML program.
+
+    Example: START *= 49152
+
+    Must be placed at the very beginning of your ML program, and only used
+    once.
+
+    ML-safe: usable inside an ASSEM block.
+
+SYS address[, A, X, Y, ST]                                   *visionbasic-SYS*
+    Starts execution of ML code at address. If the A, X, Y and ST values are
+    specified, they are loaded into the registers before starting.
+
+    Example: SYS 49152, 0, 1, 2
+
+------------------------------------------------------------------------------
+EDITOR & COMPILER
+------------------------------------------------------------------------------
+
+AUTO                                                        *visionbasic-AUTO*
+    Undocumented automatic line numbering.
+
+    Present in the Vision BASIC token table but not documented in the cheat
+    sheet.
+
+COMP ["filename"[, devnum]]                                 *visionbasic-COMP*
+    Compiles the program in memory and optionally saves the result to a file.
+
+      filename (optional) string
+        Output file name, 12 characters or less
+      devnum (optional) integer
+        Device to save to; the default device if omitted
+
+    Example: COMP "MYPROG",8
+
+CONT                                                        *visionbasic-CONT*
+    Continues a stopped program.
+
+    Present in the Vision BASIC token table but not documented in the cheat
+    sheet.
+
+DELETE [start-end]                                        *visionbasic-DELETE*
+    Deletes the range of lines from start to end. With no parameters, acts
+    like NEW.
+
+    Example: DELETE 100-200
+
+DESC line#, label                                           *visionbasic-DESC*
+    Creates a subroutine label and starts its code at line#.
+
+    Example: DESC 1000, DRAWSCREEN
+
+ERROR                                                      *visionbasic-ERROR*
+    Displays the errors.
+
+EXEC command block                                          *visionbasic-EXEC*
+    Runs a single line in immediate mode. Shorthand: >
+
+    Example: > PRINT "HELLO"
+
+    The > character is an accepted shorthand for EXEC.
+
+FIND text                                                   *visionbasic-FIND*
+    Searches the program in the current bank for lines containing text.
+
+    Example: FIND [LDA
+
+    Do not use quotes when searching for keywords. When searching for
+    assembly, put a left bracket in front of the instruction.
+
+HALT                                                        *visionbasic-HALT*
+    Stops compilation at this point. All previous code will be compiled.
+
+    ML-safe: usable inside an ASSEM block.
+
+LIST [line#[-line#]]                                        *visionbasic-LIST*
+    Displays the program in memory. Can optionally display only the lines
+    between the given parameters.
+
+    Example: LIST 100-200
+
+LISTER [line#]                                            *visionbasic-LISTER*
+    A scrollable LIST. If line# is specified, starts at that line.
+
+    Example: LISTER 500
+
+LITE [0/1]                                                  *visionbasic-LITE*
+    With no parameter or a 1, enables LITE mode. 0 disables it.
+
+    Example: LITE 1
+
+LLIST [line#[-line#[, printer?]]]                          *visionbasic-LLIST*
+    Displays extended details about the program in memory.
+
+      line# (optional) integer
+        First line, and optionally last line, to describe
+      printer? (optional) 0-1
+        1 sends the output to a printer
+
+    Example: LLIST 100-200,1
+
+MODULE filename[, devnum[, address]]  ...  MODULE END     *visionbasic-MODULE*
+    When compiling, writes this section to a separate module file filename for
+    reusability. MODULE END marks the end of the module.
+
+      filename         string
+        Module file to write
+      devnum (optional) integer
+        Device to write to; the default device if omitted
+      address (optional) integer
+        Load address; 49152 if not specified
+
+    Example: MODULE "SPRITELIB",8,49152
+
+    ML-safe: usable inside an ASSEM block.
+
+MODULE END                                            *visionbasic-MODULE END*
+    End of a module section.
+
+NEW [bank[-bank]]                                            *visionbasic-NEW*
+    Clears the current program bank, or the banks specified.
+
+    Example: NEW 1-3
+
+OLD [bank[-bank]]                                            *visionbasic-OLD*
+    Attempts to restore the program in the current bank, or the banks
+    specified.
+
+    Example: OLD
+
+PLIST [line#[-line#]]                                      *visionbasic-PLIST*
+    Sends the program LIST to a printer.
+
+    Example: PLIST 100-200
+
+PREV                                                        *visionbasic-PREV*
+    Undocumented.
+
+    Present in the Vision BASIC token table but not documented in the cheat
+    sheet.
+
+QUIT                                                        *visionbasic-QUIT*
+    Quits Vision BASIC.
+
+RENUM start-end, new[, step]                               *visionbasic-RENUM*
+    Renumbers the lines from start to end so that they begin at new.
+
+      start-end        integer
+        Range of existing lines to renumber
+      new              integer
+        New first line number
+      step (optional)  integer
+        Line number increment; 10 if not specified
+
+    Example: RENUM 100-500, 1000, 10
+
+RESUME                                                    *visionbasic-RESUME*
+    Resumes compilation after a HALT.
+
+    Must be at the beginning of a line, or it will be ignored.
+
+    ML-safe: usable inside an ASSEM block.
+
+RUN [line#]                                                  *visionbasic-RUN*
+    Runs the compiled, in-memory program. If the program is not compiled or
+    has been altered, compiles it first. If line# is specified, starts there,
+    otherwise from the first line.
+
+    Example: RUN
+
+VLIST [num]                                                *visionbasic-VLIST*
+    Displays all of the variables from the program in memory. If num is
+    specified, sends the output to a printer.
+
+    Example: VLIST
+
+------------------------------------------------------------------------------
+CONDITIONALS
+------------------------------------------------------------------------------
+
+ELSE statement                                              *visionbasic-ELSE*
+    If the prior IF expression evaluated to FALSE, statement will be executed.
+
+    Example: IF A = 1 THEN PRINT "ONE" : ELSE PRINT "OTHER"
+
+IF expression [AND | OR | EOR expression]                     *visionbasic-IF*
+    Evaluates the expression and sets a flag that will be acted upon when the
+    program reaches a THEN statement.
+
+    Example: IF A = 1 THEN PRINT "ONE"
+
+THEN statement                                              *visionbasic-THEN*
+    If the prior IF expression evaluated to TRUE, statement will be executed.
+
+    Example: IF A = 1 THEN PRINT "ONE"
+
+------------------------------------------------------------------------------
+LOOPS
+------------------------------------------------------------------------------
+
+DO line#, times                                               *visionbasic-DO*
+    Runs line line# times times.
+
+    Example: DO 1000, 10
+
+    DO loops only work on integer variables.
+
+FOR var = start TO end [STEP val]                            *visionbasic-FOR*
+    Defines a FOR loop that iterates variable var from start to end,
+    incrementing by 1, or by val if STEP is given.
+
+    Example: FOR I = 1 TO 10 : PRINT I : NEXT I
+
+    FOR-TO-STEP-NEXT loops only work on integer variables.
+
+NEXT var[, var[, ...]]                                      *visionbasic-NEXT*
+    The end of the FOR loop. var must match the FOR loop you are continuing.
+
+    Example: NEXT I
+
+FOR var = start TO end STEP val                             *visionbasic-STEP*
+    Sets the increment of a FOR loop.
+
+FOR var = start TO end                                        *visionbasic-TO*
+    Separates the start and end values of a FOR loop.
+
+------------------------------------------------------------------------------
+PROGRAM FLOW
+------------------------------------------------------------------------------
+
+END                                                          *visionbasic-END*
+    Ends the execution of the program and returns the screen to normal.
+
+GOSUB line#[, line#[, ...]]                                *visionbasic-GOSUB*
+    Runs a subroutine at line#. If more than one line# is specified, runs each
+    one in the order specified.
+
+    Example: GOSUB 1000, 2000
+
+    ML-safe: usable inside an ASSEM block.
+
+GOTO tag | line number                                      *visionbasic-GOTO*
+    Jumps to the line number or tag in the program.
+
+    Example: GOTO 1000
+
+    ML-safe: usable inside an ASSEM block.
+
+ON var GOSUB | GOTO line#, line#, ...                         *visionbasic-ON*
+    Jumps to the line# that matches the value of var.
+
+    Example: ON A GOTO 1000, 2000, 3000
+
+PASS vop[, vop[, vop[, ...]]]                               *visionbasic-PASS*
+    Defines parameters vop for a subroutine. Must be the first command after
+    PROC if you are passing parameters.
+
+    Example: PASS X, Y
+
+    Call a subroutine like tag.vop,vop,vop. Strings and string variables
+    cannot be returned from subroutines.
+
+POINT vop = line#   |   POINT TAG tag = line#              *visionbasic-POINT*
+    Sets vop to the address of the compiled code for line line#. The POINT TAG
+    form creates a tag and points it at that address instead.
+
+    Example: POINT TAG ROUTINE = 1000
+
+    Call a subroutine like tag.vop,vop,vop. Strings and string variables
+    cannot be returned from subroutines.
+
+PROC tag[, vop[, vop[, ...]]]                               *visionbasic-PROC*
+    Defines the start of a subroutine named tag with parameters vop.
+
+    Example: PROC DRAWBOX, X, Y
+
+    Call a subroutine like tag.vop,vop,vop. Strings and string variables
+    cannot be returned from subroutines.
+
+    Note: Strings and string variables cannot be returned from subroutines.
+    Call a named subroutine as `TAG.arg,arg`.
+
+    ML-safe: usable inside an ASSEM block.
+
+RETURN                                                    *visionbasic-RETURN*
+    Ends a subroutine and sends program flow back to the GOSUB statement, or
+    to the caller of a PROC.
+
+    Call a subroutine like tag.vop,vop,vop. Strings and string variables
+    cannot be returned from subroutines.
+
+    ML-safe: usable inside an ASSEM block.
+
+SEND vov                                                    *visionbasic-SEND*
+    Makes the subroutine return the value vov. Must be the final command
+    before RETURN if used.
+
+    Example: SEND RESULT
+
+    Call a subroutine like tag.vop,vop,vop. Strings and string variables
+    cannot be returned from subroutines.
+
+    Note: Strings and string variables cannot be returned from subroutines.
+
+STOP                                                        *visionbasic-STOP*
+    Stops the program execution but does not reset the screen.
+
+TRAP line#[, vop]                                           *visionbasic-TRAP*
+    Sends control of your program to line# on error.
+
+      line#            integer
+        Line to jump to when an error occurs
+      vop (optional)   variable
+        Non-arrayed int that will receive the address of the error
+
+    Example: TRAP 9000, ERRADDR
+
+TREND                                                      *visionbasic-TREND*
+    Undocumented.
+
+    Present in the Vision BASIC token table but not documented in the cheat
+    sheet.
+
+------------------------------------------------------------------------------
+VARIABLES & TYPES
+------------------------------------------------------------------------------
+
+CLR                                                          *visionbasic-CLR*
+    Clears the memory used by all variables.
+
+DECIMAL variable[, variable[, variable[, ...]]]          *visionbasic-DECIMAL*
+    Creates new decimal variables.
+
+    Example: DECIMAL X, Y, RATE
+
+    Variables must start with a letter and can be up to 8 characters long;
+    anything past 8 characters is silently ignored. The symbols !, @, #, %, &
+    and ? and numbers are allowed. Variable names can contain keywords but
+    cannot start with one. Strings must be terminated with a dollar ($) sign.
+    All variables are integers by default.
+
+DEF type var[, var, var, ...]                                *visionbasic-DEF*
+    Defines variable types in a structured fashion.
+
+      type             TAG | LABEL | INT | INTEGER | DECIMAL
+        The type to give the listed variables
+      var              name
+        One or more variable names
+
+    Example: DEF DECIMAL X, Y
+
+DIM [DECIMAL] variable(value)                                *visionbasic-DIM*
+    Creates array variable of value size. DECIMAL makes it an array of
+    decimals rather than integers.
+
+    Example: DIM SCORES(20)
+
+DUBL                                                        *visionbasic-DUBL*
+    Double-precision variable type, used with DEF.
+
+    Present in the Vision BASIC token table but not documented in the cheat
+    sheet.
+
+GLOBAL                                                    *visionbasic-GLOBAL*
+    Restores the global variable scope.
+
+    ML-safe: usable inside an ASSEM block.
+
+INTEGER                                                  *visionbasic-INTEGER*
+    Integer variable type, used with DEF.
+
+    Example: DEF INTEGER X, Y
+
+    Present in the Vision BASIC token table but not documented in the cheat
+    sheet.
+
+LET variable = value                                         *visionbasic-LET*
+    Assigns a simple value to a simple variable. Useful for speed.
+
+    Example: LET A = 5
+
+LOCAL                                                      *visionbasic-LOCAL*
+    Starts a local scope for variables.
+
+    ML-safe: usable inside an ASSEM block.
+
+SUB                                                          *visionbasic-SUB*
+    Undocumented. Sits beside DUBL, LABEL and INTEGER in the DEF type group.
+
+    Present in the Vision BASIC token table but not documented in the cheat
+    sheet.
+
+TAG tag [= vov]                                              *visionbasic-TAG*
+    Creates a TAG named tag with the value vov. If vov is not specified, the
+    tag gets the current address in the program. Used like a label in
+    assembler.
+
+    Example: TAG SCREEN = 1024
+
+    Tags cannot be to the left of an equals sign in a math expression.
+
+    ML-safe: usable inside an ASSEM block.
+
+VARIABLES [address]                                    *visionbasic-VARIABLES*
+    Moves the program variable table to address, or to 32768 if not specified.
+
+    Example: VARIABLES 40960
+
+    ML-safe: usable inside an ASSEM block.
+
+------------------------------------------------------------------------------
+WORD OPERATORS
+------------------------------------------------------------------------------
+
+vov AND vov                                                  *visionbasic-AND*
+    Performs a logical (bitwise) AND.
+
+    Example: A = B AND 15
+
+vov EOR vov                                                  *visionbasic-EOR*
+    Performs a logical (bitwise) Exclusive OR.
+
+    Example: A = B EOR 255
+
+NOT vov                                                      *visionbasic-NOT*
+    Logical NOT.
+
+    Present in the Vision BASIC token table but not documented in the cheat
+    sheet.
+
+vov OR vov                                                    *visionbasic-OR*
+    Performs a logical (bitwise) OR.
+
+    Example: A = B OR 128
+
+------------------------------------------------------------------------------
+MATH
+------------------------------------------------------------------------------
+
+ABS(vov)                                                     *visionbasic-ABS*
+    Returns the absolute value of vov.
+
+    Example: A = ABS(B)
+
+    Parentheses are NOT allowed in mathematical expressions, and order of
+    operations is not followed: expressions are evaluated strictly left to
+    right. 4+3*5-2*6 evaluates as (((4+3)*5)-2)*6 = 198.
+
+ADD vop = vov + vov                                          *visionbasic-ADD*
+    Fast addition of two values into an integer variable, tag or pointer.
+
+    Example: ADD A = B + 1
+
+    Works only with non-arrayed integer variables, tags and pointers.
+
+    ML-safe: usable inside an ASSEM block.
+
+ATN(vov)                                                     *visionbasic-ATN*
+    Not available in Vision BASIC.
+
+    The BASIC V2 functions USR, FRE, POS, SQR, LOG, EXP, COS, SIN, TAN and ATN
+    are not implemented by Vision BASIC.
+
+    Note: not implemented by Vision BASIC.
+
+COMPARE vov, vov                                         *visionbasic-COMPARE*
+    Fast comparison of two values. Both parameters must be 2 byte integers.
+
+    Example: COMPARE A, B
+
+    Works only with non-arrayed integer variables, tags and pointers.
+
+    ML-safe: usable inside an ASSEM block.
+
+COS(vov)                                                     *visionbasic-COS*
+    Not available in Vision BASIC.
+
+    The BASIC V2 functions USR, FRE, POS, SQR, LOG, EXP, COS, SIN, TAN and ATN
+    are not implemented by Vision BASIC.
+
+    Note: not implemented by Vision BASIC.
+
+DEC vop                                                      *visionbasic-DEC*
+    Decrements vop by 1.
+
+    Example: DEC A
+
+    Works with non-arrayed integer variables, tags and pointers, and also with
+    non-arrayed decimal variables.
+
+DOUBLE vop                                                *visionbasic-DOUBLE*
+    Multiplies vop by 2.
+
+    Example: DOUBLE A
+
+    Works with non-arrayed integer variables, tags and pointers, and also with
+    non-arrayed decimal variables.
+
+    ML-safe: usable inside an ASSEM block.
+
+EXP(vov)                                                     *visionbasic-EXP*
+    Not available in Vision BASIC.
+
+    The BASIC V2 functions USR, FRE, POS, SQR, LOG, EXP, COS, SIN, TAN and ATN
+    are not implemented by Vision BASIC.
+
+    Note: not implemented by Vision BASIC.
+
+FN name(vov)                                                  *visionbasic-FN*
+    User-defined function reference, as in BASIC V2.
+
+    Present in the Vision BASIC token table but not documented in the cheat
+    sheet.
+
+FRAC(vov)                                                   *visionbasic-FRAC*
+    Returns the fractional value of vov, stripped of the sign.
+
+    Example: A = FRAC(B)
+
+FRE(vov)                                                     *visionbasic-FRE*
+    Not available in Vision BASIC.
+
+    The BASIC V2 functions USR, FRE, POS, SQR, LOG, EXP, COS, SIN, TAN and ATN
+    are not implemented by Vision BASIC.
+
+    Note: not implemented by Vision BASIC.
+
+HALF vop                                                    *visionbasic-HALF*
+    Divides vop by 2.
+
+    Example: HALF A
+
+    Works with non-arrayed integer variables, tags and pointers, and also with
+    non-arrayed decimal variables.
+
+    ML-safe: usable inside an ASSEM block.
+
+INC vop                                                      *visionbasic-INC*
+    Increments vop by 1.
+
+    Example: INC A
+
+    Works with non-arrayed integer variables, tags and pointers, and also with
+    non-arrayed decimal variables.
+
+INT(vov)                                                     *visionbasic-INT*
+    Returns the integer value of vov, rounded down.
+
+    Example: A = INT(B)
+
+JOIN vop = low, high                                        *visionbasic-JOIN*
+    Joins a low and a high byte into a single variable. The opposite of SPLIT.
+
+    Example: JOIN A = LO, HI
+
+LOG(vov)                                                     *visionbasic-LOG*
+    Not available in Vision BASIC.
+
+    The BASIC V2 functions USR, FRE, POS, SQR, LOG, EXP, COS, SIN, TAN and ATN
+    are not implemented by Vision BASIC.
+
+    Note: not implemented by Vision BASIC.
+
+POS(vov)                                                     *visionbasic-POS*
+    Not available in Vision BASIC.
+
+    The BASIC V2 functions USR, FRE, POS, SQR, LOG, EXP, COS, SIN, TAN and ATN
+    are not implemented by Vision BASIC.
+
+    Note: not implemented by Vision BASIC.
+
+RANDOM [seed]                                             *visionbasic-RANDOM*
+    Initializes the random number table. With no parameter, uses SID voice 3;
+    otherwise seeds the table with seed.
+
+    Example: RANDOM
+
+RND [0]                                                      *visionbasic-RND*
+    Generates a random number. If 0 is supplied, limits the result to 0-255,
+    otherwise 0-65535.
+
+    Example: A = RND 0
+
+SGN(vov)                                                     *visionbasic-SGN*
+    Returns the sign of vov.
+
+    Example: A = SGN(B)
+
+SIN(vov)                                                     *visionbasic-SIN*
+    Not available in Vision BASIC.
+
+    The BASIC V2 functions USR, FRE, POS, SQR, LOG, EXP, COS, SIN, TAN and ATN
+    are not implemented by Vision BASIC.
+
+    Note: not implemented by Vision BASIC.
+
+SPLIT low, high[, high2] = vov                             *visionbasic-SPLIT*
+    Splits a variable into low and high bytes.
+
+    Example: SPLIT LO, HI = A
+
+SQR(vov)                                                     *visionbasic-SQR*
+    Not available in Vision BASIC.
+
+    The BASIC V2 functions USR, FRE, POS, SQR, LOG, EXP, COS, SIN, TAN and ATN
+    are not implemented by Vision BASIC.
+
+    Note: not implemented by Vision BASIC.
+
+SUBTRACT vop = vov - vov                                *visionbasic-SUBTRACT*
+    Fast subtraction of two values into an integer variable, tag or pointer.
+
+    Example: SUBTRACT A = B - 1
+
+    Works only with non-arrayed integer variables, tags and pointers.
+
+    ML-safe: usable inside an ASSEM block.
+
+TAN(vov)                                                     *visionbasic-TAN*
+    Not available in Vision BASIC.
+
+    The BASIC V2 functions USR, FRE, POS, SQR, LOG, EXP, COS, SIN, TAN and ATN
+    are not implemented by Vision BASIC.
+
+    Note: not implemented by Vision BASIC.
+
+USR(vov)                                                     *visionbasic-USR*
+    Not available in Vision BASIC.
+
+    The BASIC V2 functions USR, FRE, POS, SQR, LOG, EXP, COS, SIN, TAN and ATN
+    are not implemented by Vision BASIC.
+
+    Note: not implemented by Vision BASIC.
+
+WHOLE(vov)                                                 *visionbasic-WHOLE*
+    Returns the integer value of vov without rounding.
+
+    Example: A = WHOLE(B)
+
+π                                                              *visionbasic-π*
+    The value of PI in decimal.
+
+    Example: A = π
+
+------------------------------------------------------------------------------
+STRINGS
+------------------------------------------------------------------------------
+
+ASC(string)                                                  *visionbasic-ASC*
+    Returns the ASCII value of string.
+
+    Example: A = ASC(N$)
+
+CHR$(vov[, count])                                          *visionbasic-CHR$*
+    Appends ASCII character vov to a string, 1 or count times.
+
+    Example: A$ = CHR$(147)
+
+DUP$(string, count)                                         *visionbasic-DUP$*
+    Duplicates string string count times.
+
+    Example: A$ = DUP$("-", 40)
+
+LEFT$(string, count)                                       *visionbasic-LEFT$*
+    Returns count characters from the left of string.
+
+    Example: A$ = LEFT$(B$, 5)
+
+LEN(string)                                                  *visionbasic-LEN*
+    Returns the length of string.
+
+    Example: A = LEN(B$)
+
+MID$(string, position, count)                               *visionbasic-MID$*
+    Returns count characters, starting at index position, from string.
+
+    Example: A$ = MID$(B$, 3, 5)
+
+RIGHT$(string, count)                                     *visionbasic-RIGHT$*
+    Returns count characters from the right of string.
+
+    Example: A$ = RIGHT$(B$, 5)
+
+STR$(vov)                                                   *visionbasic-STR$*
+    Converts number vov into a string.
+
+    Example: A$ = STR$(N)
+
+VAL(string)                                                  *visionbasic-VAL*
+    Returns the mathematical value of string.
+
+    Example: A = VAL(N$)
+
+------------------------------------------------------------------------------
+BITMAP & SPRITES
+------------------------------------------------------------------------------
+
+ALLMOBS x0, y0, x1, y1, x2, y2, x3, y3, x4, y4, x5, y5, x6, y6, x7, y7*visionbasic-ALLMOBS*
+    Sets all eight sprite positions in a single command.
+
+    Example: ALLMOBS 24,50,64,50,104,50,144,50,184,50,224,50,264,50,304,50
+
+    Commands begin with MOB as a carryover from Simon's BASIC.
+
+BITMAP [bmp, multicolor, map, drawto, screen, color1, color2, color3, clearcol, clearmap]*visionbasic-BITMAP*
+    Turns bitmap mode and multicolor mode on (1) or off (0), and sets the
+    visible map, draw-to screen and colors.
+
+      bmp (optional)   0-1
+        Turns bitmap mode on or off
+      multicolor (optional) 0-1
+        Turns multicolor mode on or off
+      map (optional)   0-7
+        Which bitmap screen is visible
+      drawto (optional) 0-7
+        Which screen the drawing commands draw to
+      screen (optional) integer
+        Screen used for the bitmap colors
+      color1 (optional) 0-15
+      color2 (optional) 0-15
+      color3 (optional) 0-15
+      clearcol (optional) 0-1
+        1 clears the color screen
+      clearmap (optional) 0-1
+        1 clears the bitmap
+
+    Example: BITMAP 1,0,0,0,1,0,1,2,1,1
+
+    All parameters can be values or variables. If a parameter is left off, a
+    default or previous value is used.
+
+BMPCLR [clearmap[, clearcol]]                             *visionbasic-BMPCLR*
+    Clears the currently visible bitmap screen if clearmap is 1, and the color
+    screen if clearcol is 1. If neither argument is specified, clears both.
+
+    Example: BMPCLR 1,1
+
+    All parameters can be values or variables. If a parameter is left off, a
+    default or previous value is used.
+
+BMPCOL screen, color1, color2, color3, clearcol[, clearmap]*visionbasic-BMPCOL*
+    Sets the bitmap colors that will be used and defines which screen to use.
+    If clearmap is 1, clears the bitmap.
+
+    Example: BMPCOL 1,0,1,2,1,1
+
+    All parameters can be values or variables. If a parameter is left off, a
+    default or previous value is used.
+
+BMPLOC map, drawto                                        *visionbasic-BMPLOC*
+    Sets which bitmap screen is visible and which screen the drawing commands
+    draw to.
+
+      map              0-7
+        Bitmap screen to make visible
+      drawto           0-7
+        Bitmap screen the drawing commands affect
+
+    Example: BMPLOC 0,1
+
+    All parameters can be values or variables. If a parameter is left off, a
+    default or previous value is used.
+
+COLLISION selection                                    *visionbasic-COLLISION*
+    Copies the collision registers and zeros the copied register.
+
+      selection        0-1
+        0 copies the sprite-to-sprite register, 1 the sprite-to-foreground
+        register
+
+    Example: COLLISION 0
+
+    Commands begin with MOB as a carryover from Simon's BASIC.
+
+DETECT mob#[, mob#[, mob#[, ...]]]                        *visionbasic-DETECT*
+    Used after the COLLISION command. Checks whether the specified sprites
+    were involved in a collision.
+
+    Example: COLLISION 0 : DETECT 0,1
+
+    Commands begin with MOB as a carryover from Simon's BASIC.
+
+HLINE x, y, len, color                                     *visionbasic-HLINE*
+    Draws a straight horizontal line starting at (x, y) and continuing to the
+    right for len pixels in color.
+
+    Example: HLINE 0,100,320,1
+
+    All parameters can be values or variables. If a parameter is left off, a
+    default or previous value is used.
+
+LIMITS width, height, x-pos, y-pos, colorplot             *visionbasic-LIMITS*
+    Limits the area on the bitmap that the drawing commands will affect.
+
+    Example: LIMITS 160,100,80,50,1
+
+    All parameters can be values or variables. If a parameter is left off, a
+    default or previous value is used.
+
+LINE x1, y1[, x2, y2[, color]]                              *visionbasic-LINE*
+    Draws a line on the bitmap from (x1, y1) to (x2, y2) in color. If x2 and
+    y2 are not specified, draws from (x1, y1) to the current coordinate.
+
+    Example: LINE 0,0,319,199,1
+
+    All parameters can be values or variables. If a parameter is left off, a
+    default or previous value is used.
+
+MOB number, on, multicolor, priority, x, y, x-add, y-add     *visionbasic-MOB*
+    Chooses which sprite to make current and initializes it.
+
+      number           0-7
+        Which sprite becomes the current sprite
+      on               0-1
+        Turns the sprite on or off
+      multicolor       0-1
+        Enables or disables multicolor mode
+      priority         0-1
+        Enables or disables background priority
+      x                integer
+        Initial X coordinate
+      y                integer
+        Initial Y coordinate
+      x-add            integer
+        X offset
+      y-add            integer
+        Y offset
+
+    Example: MOB 0,1,0,0,160,100,0,0
+
+    Commands begin with MOB as a carryover from Simon's BASIC.
+
+MOBCLR                                                    *visionbasic-MOBCLR*
+    Clears all of the sprite registers. Recommended at the beginning of a
+    program that uses sprites, and when you want to clear the screen of
+    sprites.
+
+    Commands begin with MOB as a carryover from Simon's BASIC.
+
+MOBCOL color, shared1, shared2                            *visionbasic-MOBCOL*
+    Sets the sprite colors.
+
+      color            0-15
+        Color of the current sprite
+      shared1          0-15
+        First color shared by all multicolor sprites
+      shared2          0-15
+        Second color shared by all multicolor sprites
+
+    Example: MOBCOL 1,2,3
+
+    Commands begin with MOB as a carryover from Simon's BASIC.
+
+MOBEXP x-expan, y-expan                                   *visionbasic-MOBEXP*
+    Enables and disables the X expansion and Y expansion of the current
+    sprite.
+
+    Example: MOBEXP 1,1
+
+    Commands begin with MOB as a carryover from Simon's BASIC.
+
+MOBPAT shape#, bank                                       *visionbasic-MOBPAT*
+    Moves the CODE pointer to point at the specified sprite shape's data.
+    shape# selects the shape, bank specifies the bank where the coded data
+    will be sent.
+
+    Example: MOBPAT 0,1
+
+    Commands begin with MOB as a carryover from Simon's BASIC.
+
+MOBSET shape#, number, number, number, ...                *visionbasic-MOBSET*
+    Initializes a sprite from The Spreditor.
+
+    Example: MOBSET 0,1,2,3
+
+    Commands begin with MOB as a carryover from Simon's BASIC.
+
+MOBXY x, y, x-add, y-add                                   *visionbasic-MOBXY*
+    Moves the current sprite to the coordinates (x, y). x-add and y-add set
+    the offsets.
+
+    Example: MOBXY 160,100,0,0
+
+    Commands begin with MOB as a carryover from Simon's BASIC.
+
+PLOT x, y, color                                            *visionbasic-PLOT*
+    Draws a pixel on the bitmap at coordinates (x, y) in color.
+
+      x                0-319
+      y                0-199
+      color            0-15
+
+    Example: PLOT 160,100,1
+
+    All parameters can be values or variables. If a parameter is left off, a
+    default or previous value is used.
+
+SHAPE byte[, byte[, byte[, ...]]]                          *visionbasic-SHAPE*
+    Changes the current sprite's shape. If more than one shape is specified,
+    sets the shape for the following sprites.
+
+    Example: SHAPE 255,255,255
+
+    Commands begin with MOB as a carryover from Simon's BASIC.
+
+VLINE x, y, len, color                                     *visionbasic-VLINE*
+    Draws a straight vertical line starting at (x, y) and going down for len
+    pixels in color.
+
+    Example: VLINE 160,0,200,1
+
+    All parameters can be values or variables. If a parameter is left off, a
+    default or previous value is used.
+
+------------------------------------------------------------------------------
+SID SOUND
+------------------------------------------------------------------------------
+
+ADSR attack, decay, sustain, release                        *visionbasic-ADSR*
+    Specifies the attack, decay, sustain and release parameters for the
+    current voice.
+
+      attack           0-15
+      decay            0-15
+      sustain          0-15
+      release          0-15
+
+    Example: ADSR 0,9,0,0
+
+    Requires a current VOICE to be selected before calling. All parameters can
+    be values or variables; a parameter left off reuses the previous value, or
+    0 if none was set. 0 disables, 1 enables.
+
+CUTOFF freq                                               *visionbasic-CUTOFF*
+    Sets the cutoff frequency to freq for the SID filtering system.
+
+    Example: CUTOFF 1024
+
+    All parameters can be values or variables; a parameter left off reuses the
+    previous value, or 0 if none was set. 0 disables, 1 enables.
+
+FILTER voice1, voice2, voice3, ext, resonance             *visionbasic-FILTER*
+    Enables or disables the filters of voice1, voice2 and voice3, the output
+    of the external input, and sets the resonance value.
+
+    Example: FILTER 1,0,0,0,8
+
+    All parameters can be values or variables; a parameter left off reuses the
+    previous value, or 0 if none was set. 0 disables, 1 enables.
+
+FREQ freq                                                   *visionbasic-FREQ*
+    Specifies that the current voice will play frequency freq.
+
+    Example: FREQ 4291
+
+    Requires a current VOICE to be selected before calling. All parameters can
+    be values or variables; a parameter left off reuses the previous value, or
+    0 if none was set. 0 disables, 1 enables.
+
+PULSE width                                                *visionbasic-PULSE*
+    Specifies the pulse waveform width for the current voice.
+
+    Example: PULSE 2048
+
+    Requires a current VOICE to be selected before calling. All parameters can
+    be values or variables; a parameter left off reuses the previous value, or
+    0 if none was set. 0 disables, 1 enables.
+
+SIDCLR                                                    *visionbasic-SIDCLR*
+    Clears the sound registers.
+
+    All parameters can be values or variables; a parameter left off reuses the
+    previous value, or 0 if none was set. 0 disables, 1 enables.
+
+VOICE num                                                  *visionbasic-VOICE*
+    Chooses which voice will be used.
+
+      num              1-3
+        SID voice to make current
+
+    Example: VOICE 1
+
+    All parameters can be values or variables; a parameter left off reuses the
+    previous value, or 0 if none was set. 0 disables, 1 enables.
+
+    Note: Must be called before FREQ, PULSE, ADSR and WAVE — they all act on
+    the current voice.
+
+VOL volume, low, band, high, disconnect                      *visionbasic-VOL*
+    Controls the main volume and filter selection.
+
+      volume           0-15
+        Main SID volume
+      low              0-1
+        Low pass filter
+      band             0-1
+        Band pass filter
+      high             0-1
+        High pass filter
+      disconnect       0-1
+        Disconnects the output of voice 3
+
+    Example: VOL 15,0,0,0,0
+
+    All parameters can be values or variables; a parameter left off reuses the
+    previous value, or 0 if none was set. 0 disables, 1 enables.
+
+WAVE gate, wave, ring, sync, test                           *visionbasic-WAVE*
+    Sets the waveform and gate for the current voice.
+
+      gate             0-1
+        Enables or disables the gate
+      wave             1 | 2 | 4 | 8
+        1 triangle, 2 sawtooth, 4 pulse, 8 noise
+      ring             0-1
+        Ring modulate oscillators
+      sync             0-1
+        Sync modulate oscillators
+      test             0-1
+        Enables or disables the voice oscillator
+
+    Example: WAVE 1,4,0,0,0
+
+    Requires a current VOICE to be selected before calling. All parameters can
+    be values or variables; a parameter left off reuses the previous value, or
+    0 if none was set. 0 disables, 1 enables.
+
+------------------------------------------------------------------------------
+TEXT SCREEN
+------------------------------------------------------------------------------
+
+BLANK [blank[, bg, bars1, bars2]]                          *visionbasic-BLANK*
+    Blanks or restores the screen.
+
+      blank (optional) 0-1
+        1 blanks the screen, 0 un-blanks it
+      bg (optional)    0-15
+        Background color
+      bars1 (optional) 0-15
+        First bar color
+      bars2 (optional) 0-15
+        Second bar color
+
+    Example: BLANK 1,0,1,2
+
+CATCH rasterline                                           *visionbasic-CATCH*
+    Acts like a WAIT command for the raster line.
+
+      rasterline       0-255
+        Raster line to wait for
+
+    Example: CATCH 250
+
+CHARPAT character, charset                               *visionbasic-CHARPAT*
+    Moves the "code" pointer to point at a specific character image.
+
+      character        0-255
+        The character to point at
+      charset          integer
+        The character set the character is in
+
+    Example: CHARPAT 65, 2
+
+CHARSET charset                                          *visionbasic-CHARSET*
+    Selects the desired character set.
+
+    Example: CHARSET 2
+
+CLS [pokecode[, color]]                                      *visionbasic-CLS*
+    Clears the current text screen. Uses space if pokecode is not specified.
+    Colors are not changed unless color is specified.
+
+    Example: CLS 32,1
+
+COLORS text, border, screen, color1, color2, color3       *visionbasic-COLORS*
+    Sets the color registers.
+
+      text             0-15
+        Text color
+      border           0-15
+        Border color
+      screen           0-15
+        Background color
+      color1           0-15
+        Extra background color 1
+      color2           0-15
+        Extra background color 2
+      color3           0-15
+        Extra background color 3
+
+    Example: COLORS 1,0,0,2,3,4
+
+COPYSET charset[, case]                                  *visionbasic-COPYSET*
+    Copies the C64 character set to location charset.
+
+      charset          integer
+        Destination of the copied character set
+      case (optional)  0-1
+        0 copies uppercase, 1 copies lowercase
+
+    Example: COPYSET 2, 0
+
+EXTENDED on[, color1, color2, color3]                   *visionbasic-EXTENDED*
+    Turns extended color mode on or off. If colors are supplied, sets the 3
+    background colors.
+
+    Example: EXTENDED 1,0,1,2
+
+LOC(x, y)                                                    *visionbasic-LOC*
+    Moves the cursor to location x, y on the current text screen.
+
+    Example: LOC(10,5) : PRINT "HELLO"
+
+LOWERCASE [disable]                                    *visionbasic-LOWERCASE*
+    Changes the character set to lowercase. If disable is 1, disables keyboard
+    toggling between upper and lower case.
+
+    Example: LOWERCASE 1
+
+MULTI on[, color1, color2]                                 *visionbasic-MULTI*
+    Turns multicolor mode on or off. If colors are specified, sets the
+    background colors.
+
+    Example: MULTI 1,1,2
+
+NORMAL clear                                              *visionbasic-NORMAL*
+    Resets the screen to normal text mode.
+
+      clear            0-1
+        1 clears the line link table, 0 does not
+
+    Example: NORMAL 1
+
+PANX panvalue, columns                                      *visionbasic-PANX*
+    Pans the screen horizontally.
+
+      panvalue         0-7
+        Pan amount, bit-reversed; 0 is none
+      columns          0-1
+        0 sets a 38 column screen, 1 sets 40 columns
+
+    Example: PANX 0,1
+
+    POKE 2384,0 to disable the bit-reversing of PANX and PANY.
+
+PANY panvalue, rows                                         *visionbasic-PANY*
+    Pans the screen vertically.
+
+      panvalue         0-7
+        Pan amount, bit-reversed; 3 is none
+      rows             0-1
+        0 sets a 24 row screen, 1 sets 25 rows
+
+    Example: PANY 3,1
+
+    POKE 2384,0 to disable the bit-reversing of PANX and PANY.
+
+PRINT expression                                           *visionbasic-PRINT*
+    Prints expression to the current text screen.
+
+    Example: PRINT "HELLO"
+
+SPC(vov)                                                     *visionbasic-SPC*
+    Prints vov spaces.
+
+    Example: PRINT SPC(10);"HELLO"
+
+TAB(vov)                                                     *visionbasic-TAB*
+    Moves the cursor to vov on the current line.
+
+    Example: PRINT TAB(20);"HELLO"
+
+UPPERCASE [disable]                                    *visionbasic-UPPERCASE*
+    Changes the character set to uppercase. If disable is 1, disables keyboard
+    toggling between upper and lower case.
+
+    Example: UPPERCASE 1
+
+VIDLOC screen, printto, charset, clear                    *visionbasic-VIDLOC*
+    Moves the text screen to any of the 64 1K screens available.
+
+      screen           0-63
+        Which 1K screen to display
+      printto          0-63
+        Which screen to print to; usually equal to screen
+      charset          integer
+        Location of the character set
+      clear            0-1
+        1 clears the line link table, 0 does not
+
+    Example: VIDLOC 1,1,2,1
+
+------------------------------------------------------------------------------
+MEMORY & EXPANSION RAM
+------------------------------------------------------------------------------
+
+BANK [bank[-bank]][, on/off]                                *visionbasic-BANK*
+    Displays the current bank number, or changes to the bank specified. With
+    on/off, enables or disables the banks.
+
+      bank (optional)  integer
+        Bank, or range of banks, to select or toggle
+      on/off (optional) 0-1
+        1 enables the banks, 0 disables them
+
+    Example: BANK 2
+
+    In a text video context BANK also selects the active 16K VIC-II memory
+    bank; that is not for setting REU banks, and you will probably never need
+    it.
+
+BYTES count[, byte[, tag[, alignment]]]                    *visionbasic-BYTES*
+    When compiling, inserts count bytes of value byte, with a label of tag,
+    aligned to alignment.
+
+      count            integer
+        How many bytes to insert
+      byte (optional)  0-255
+        Fill value; 0 if not specified
+      tag (optional)   string
+        Label for the block
+      alignment (optional) integer
+        Byte alignment of the block
+
+    Example: BYTES 256, 0, BUFFER, 256
+
+    ML-safe: usable inside an ASSEM block.
+
+CODE values ....                                            *visionbasic-CODE*
+    Any code following this command is stored in memory at the location
+    indicated by the "code" pointer.
+
+    Example: CODE 255,129,129,255
+
+    MOBPAT and CHARPAT move the "code" pointer to sprite shape data and
+    character image data respectively.
+
+COPY end, start, new                                        *visionbasic-COPY*
+    Copies the memory from addresses start-end to address new.
+
+    Example: COPY 8191,4096,49152
+
+DETEXT(type)                                              *visionbasic-DETEXT*
+    Returns how much extended memory of type is attached to the system.
+
+    Example: A = DETEXT(0)
+
+FETCH count, destination, reu[, bank]                      *visionbasic-FETCH*
+    Copies count bytes from an attached REU at address reu and bank bank to
+    C64 address destination.
+
+    Example: FETCH 4096, 49152, 0, 0
+
+FILL start, end[, byte[, step]]                             *visionbasic-FILL*
+    Fills the memory from address start to address end with value byte,
+    incrementing the address by step.
+
+      start            integer
+        First address to fill
+      end              integer
+        Last address to fill
+      byte (optional)  0-255
+        Value to write; 0 if not specified
+      step (optional)  integer
+        Address increment; 1 if not specified
+
+    Example: FILL 1024,2023,32
+
+LONGPEEK(address)                                       *visionbasic-LONGPEEK*
+    Returns a single value from address on a SuperCPU.
+
+    Example: A = LONGPEEK(16777216)
+
+LONGPOKE address, val, val, val, ...                    *visionbasic-LONGPOKE*
+    Pokes into the extended memory of a SuperCPU.
+
+    Example: LONGPOKE 16777216, 1, 2, 3
+
+PEEK(vov[, index])                                          *visionbasic-PEEK*
+    Returns the memory at address vov, optionally offset by index.
+
+    Example: A = PEEK(53280)
+
+POKE address, vov, vov, vov, ...                            *visionbasic-POKE*
+    Puts values vov in consecutive memory starting at address. Can also be
+    used with strings.
+
+    Example: POKE 53280,0,0
+
+REUPEEK(address, bank)                                   *visionbasic-REUPEEK*
+    Returns the value from an attached REU at address in bank bank.
+
+    Example: A = REUPEEK(0, 0)
+
+REUPOKE address, bank, val, val, ...                     *visionbasic-REUPOKE*
+    Writes the values to an attached REU starting at address in bank bank.
+
+    Example: REUPOKE 0, 0, 1, 2, 3
+
+STASH address, count, reu[, bank]                          *visionbasic-STASH*
+    Copies count C64 memory bytes at address address to the attached REU
+    address reu in bank bank.
+
+    Example: STASH 49152, 4096, 0, 0
+
+STRINGS [size]                                           *visionbasic-STRINGS*
+    With no parameter, stretches the string field to 53247, otherwise to size.
+
+    Example: STRINGS 49152
+
+    ML-safe: usable inside an ASSEM block.
+
+SWAP count, reu[, c64, bank]                                *visionbasic-SWAP*
+    Swaps the main memory at address c64 with the memory on the attached REU
+    at address reu in bank bank.
+
+    Example: SWAP 4096, 0, 49152, 0
+
+SWITCH start, end, start2                                 *visionbasic-SWITCH*
+    Swaps the memory at addresses start-end with the memory starting at
+    address start2.
+
+    Example: SWITCH 4096,8191,49152
+
+------------------------------------------------------------------------------
+DISK, FILES & INPUT
+------------------------------------------------------------------------------
+
+BUTTON joynum[, button#]                                  *visionbasic-BUTTON*
+    Returns 1 if the joystick button is pressed, 0 if not.
+
+      joynum           1-2
+        Joystick port to read
+      button# (optional) 1-3
+        Which button to read; defaults to 1
+
+    Example: IF BUTTON 2 THEN GOSUB 1000
+
+CLOSE file#, file#, ...                                    *visionbasic-CLOSE*
+    Closes one or more files.
+
+    Example: CLOSE 2
+
+CMD file#[, string]                                          *visionbasic-CMD*
+    Redirects all I/O to file file#. Optionally sends string to the file.
+
+    Example: CMD 4
+
+DEVICE devnum                                             *visionbasic-DEVICE*
+    Sets the device number for the default device.
+
+    Example: DEVICE 9
+
+DIR [num]                                                    *visionbasic-DIR*
+    Lists the current device's directory. If num is supplied, the listing is
+    sent to a printer.
+
+    Example: DIR
+
+DISK ["command"[, devnum]]                                  *visionbasic-DISK*
+    Equivalent to OPEN 15,devnum,15,"command":CLOSE 15. Uses the default
+    device if not specified, and initializes the device if command is not
+    specified.
+
+    Example: DISK "S0:OLDFILE"
+
+FILE                                                        *visionbasic-FILE*
+    Undocumented.
+
+    Present in the Vision BASIC token table but not documented in the cheat
+    sheet.
+
+GET variable                                                 *visionbasic-GET*
+    Reads a character and puts it in variable.
+
+    Example: GET A$
+
+GET# file#, variable                                        *visionbasic-GET#*
+    Reads a character from file# and puts it in variable.
+
+    Example: GET# 2, A$
+
+GSAVE on                                                   *visionbasic-GSAVE*
+    Saves a copy of the C64 RAM to GeoRAM expanded memory. If on is 1, enables
+    the back-up feature.
+
+    Example: GSAVE 1
+
+INPUT var, var, ...                                        *visionbasic-INPUT*
+    Reads lines and puts the values in var.
+
+    Example: INPUT A$, B
+
+INPUT# file#, var[, var[, ...]]                           *visionbasic-INPUT#*
+    Reads lines from file file# and stores them in var.
+
+    Example: INPUT# 2, A$
+
+JOY(joynum)                                                  *visionbasic-JOY*
+    Returns the value of the joystick port joynum, typically 1 or 2.
+
+    Example: A = JOY(2)
+
+KEYPRESS [vov[, vov]]                                   *visionbasic-KEYPRESS*
+    If vov is not specified, waits for any keypress; otherwise waits for vov
+    to be pressed. If a second vov is specified, acts like an IF block and is
+    FALSE for the first character, TRUE for the second.
+
+    Example: KEYPRESS 89, 78
+
+LOAD "filename"[, devnum]                                   *visionbasic-LOAD*
+    Loads a file from the default device. If filename is not specified, the
+    last specified filename is used.
+
+    Example: LOAD "MYPROG",8
+
+OPEN file#, dev#, secondary, string                         *visionbasic-OPEN*
+    Opens a connection to device dev#, assigning it to file file# with a
+    secondary address of secondary, and sends string through the open file.
+
+    Example: OPEN 2,8,2,"DATA,S,R"
+
+PADBUT joynum                                             *visionbasic-PADBUT*
+    Returns 1 if the paddle button is pressed, 0 if not.
+
+    Example: IF PADBUT 1 THEN GOSUB 1000
+
+PADDLE joynum                                             *visionbasic-PADDLE*
+    Returns the value of the paddle, 0-255. Paddles 1-2 are in joynum 1,
+    paddles 3-4 are in 2.
+
+    Example: A = PADDLE 1
+
+    Returned values are bit-reversed. POKE 2383,0 to disable the PADDLE bit-
+    reversing.
+
+POLL port#                                                  *visionbasic-POLL*
+    Tells the C64 which set of paddles you are polling, allowing substitution
+    of the required delay.
+
+      port#            1-2
+        1 for joystick port 1, 2 for joystick port 2
+
+    Example: POLL 1
+
+PRINT# file#, expression                                  *visionbasic-PRINT#*
+    Prints expression to file file#.
+
+    Example: PRINT# 2, "HELLO"
+
+SAVE "filename"[, devnum]                                   *visionbasic-SAVE*
+    Saves a file to the default device. Filename must be 12 characters or
+    less. If filename is not specified, the last specified filename is used.
+
+    Example: SAVE "MYPROG",8
+
+STATUS                                                    *visionbasic-STATUS*
+    Reads and clears the STatus of the last I/O operation.
+
+    Example: IF STATUS THEN PRINT "ERROR"
+
+VERIFY "filename"[, devnum]                               *visionbasic-VERIFY*
+    Verifies the program in memory against a file on the default device. If
+    filename is not specified, the last specified filename is used.
+
+    Example: VERIFY "MYPROG",8
+
+------------------------------------------------------------------------------
+SYSTEM & INTERRUPTS
+------------------------------------------------------------------------------
+
+CLOCK [jiffies]                                            *visionbasic-CLOCK*
+    Sets the CLOCK to jiffies if specified, or to 0 if not.
+
+    Example: CLOCK 0
+
+DATA val, val, ...                                          *visionbasic-DATA*
+    Holds data to be READ later.
+
+    Example: DATA 1, 2, 3
+
+DEBUG 0 | 1                                                *visionbasic-DEBUG*
+    Enables (1) or disables (0) DEBUG mode, which reduces the number of passes
+    for compilation. Results in slower and larger programs.
+
+    Example: DEBUG 1
+
+    ML-safe: usable inside an ASSEM block.
+
+FAST                                                        *visionbasic-FAST*
+    Enables speed up of some commands.
+
+HALTINT                                                  *visionbasic-HALTINT*
+    Stops the interrupt totally, returning interrupts to normal.
+
+    It is critical to halt your interrupts before exiting your program.
+
+    Note: Critical: always HALTINT before your program exits, or the machine
+    is left running your raster interrupt.
+
+INTEND flag                                               *visionbasic-INTEND*
+    Should be the last statement in your interrupt routine.
+
+      flag             0-1
+        0 JMPs to BASIC's hardware timer routine, 1 will RTI
+
+    Example: INTEND 1
+
+    It is critical to halt your interrupts before exiting your program.
+
+INTERRUPT raster, line#                                *visionbasic-INTERRUPT*
+    Creates a new raster interrupt at raster line raster which calls the code
+    at line#.
+
+      raster           50-249
+        Raster line to interrupt on
+      line#            integer
+        Line number of the interrupt routine
+
+    Example: INTERRUPT 100, 5000
+
+    It is critical to halt your interrupts before exiting your program.
+
+    Note: Critical: always HALTINT before your program exits, or the machine
+    is left running your raster interrupt.
+
+PAUSE seconds[, jiffies]                                   *visionbasic-PAUSE*
+    Pauses execution for seconds seconds. If jiffies is specified, pauses for
+    an additional (jiffies/60) seconds.
+
+    Example: PAUSE 1, 30
+
+POINT TAG                                              *visionbasic-POINT TAG*
+    Point a tag at the compiled address of a line.
+
+RASTER raster                                             *visionbasic-RASTER*
+    Selects the next raster line to interrupt.
+
+    Example: RASTER 150
+
+    It is critical to halt your interrupts before exiting your program.
+
+    ML-safe: usable inside an ASSEM block.
+
+READ vop, vop, ...                                          *visionbasic-READ*
+    Reads values from a DATA statement.
+
+    Example: READ A, B, C
+
+REM                                                          *visionbasic-REM*
+    Turns the rest of the line into a comment.
+
+    Example: REM THIS IS A COMMENT
+
+    ML-safe: usable inside an ASSEM block.
+
+RESTORE [line#]                                          *visionbasic-RESTORE*
+    Resets the pointer to the start of all DATA statements, or to the DATA
+    statement on line line#.
+
+    Example: RESTORE 1000
+
+SLOW                                                        *visionbasic-SLOW*
+    Runs at normal C64 speeds.
+
+STARTINT                                                *visionbasic-STARTINT*
+    Lets you program raster interrupts. Should be the first command in your
+    interrupt routine.
+
+    It is critical to halt your interrupts before exiting your program.
+
+    Note: Critical: always HALTINT before your program exits, or the machine
+    is left running your raster interrupt.
+
+    ML-safe: usable inside an ASSEM block.
+
+VERSION number                                           *visionbasic-VERSION*
+    Specifies which version of Vision BASIC is needed to compile the block of
+    code.
+
+    Example: VERSION 1.1
+
+    ML-safe: usable inside an ASSEM block.
+
+WAIT address, and, eor                                      *visionbasic-WAIT*
+    Waits for a non-0 result from PEEKing address and filtering it with AND
+    and and EOR eor.
+
+    Example: WAIT 53265, 128, 0
+
+==============================================================================
+vim:tw=78:ts=8:noet:ft=help:norl:

@@ -1,140 +1,187 @@
 " Vim syntax file
-" Language:    Vision BASIC (C64 enhanced BASIC)
-" Maintainer:  Tom
-" Last Change: 2026
-" Based on:    DNSGeek Vision BASIC Cheat Sheet
+" Language:    Vision BASIC (compiled BASIC for the Commodore 64)
+" URL:         https://www.visionbasic.net
+" Generated:   from the C64 IDE VisionBASIC 1.1 plugin definition.
+"              Token table extracted from VISION BASIC.VEX ($AC31);
+"              keyword docs from the Vision BASIC Cheat Sheet.
+" NOTE:        Generated file — regenerate rather than editing by hand.
 scriptencoding utf-8
 
 if exists('b:current_syntax')
   finish
 endif
 
-" Case insensitive matching
+" Vision BASIC listings are traditionally upper case, but accept either.
 syntax case ignore
-
-" ─── Line Numbers ────────────────────────────────────────────────────────────
-syntax match vbLineNumber /^\s*\d\+/ contained
-syntax region vbLine start=/^\s*\d/ end=/$/ contains=vbLineNumber,@vbCode
+syntax sync minlines=50
 
 " ─── Comments ────────────────────────────────────────────────────────────────
-" REM comment (BASIC mode) - rest of line
-syntax match vbComment /\<REM\>.*$/ contains=vbTodo
-" Semicolon comment (ML/assembler mode) - rest of line after ;
-syntax match vbMLComment /;.*$/ contains=vbTodo
-syntax keyword vbTodo TODO FIXME NOTE contained
+" A :syntax keyword always outranks a :syntax match, so REM is deliberately
+" absent from the keyword groups below and handled as a region instead.
+syntax region vbComment matchgroup=vbCommentKeyword start=/\<REM\>/ end=/$/ oneline contains=vbTodo
+" ";" only starts a comment in machine-language context — in BASIC it is the
+" PRINT separator, so match it after "]", on its own line, or inside [].
+syntax match vbMLComment /^\s*;.*$/ contains=vbTodo
+syntax match vbMLComment /\%(^\s*\d\+\s\+\)\@<=;.*$/ contains=vbTodo
+syntax match vbMLComment /\%(\]\s*\)\@<=;.*$/ contains=vbTodo
+syntax match vbMLComment contained /;.*$/ contains=vbTodo
+syntax keyword vbTodo contained TODO FIXME NOTE XXX HACK
 
-" ─── Assembler Mode Block ────────────────────────────────────────────────────
-" Mnemonics inside [] brackets
-syntax region vbAsmBlock start=/\[/ end=/\]/ contains=vbAsmMnemonic,vbMLComment,vbNumber,vbHexNumber
-syntax keyword vbAsmMnemonic contained
-  \ ADC AND ASL BCC BCS BEQ BIT BMI BNE BPL BRK BVC BVS
-  \ CLC CLD CLI CLV CMP CPX CPY DEC DEX DEY EOR INC INX INY
-  \ JMP JSR LDA LDX LDY LSR NOP ORA PHA PHP PLA PLP
-  \ ROL ROR RTI RTS SBC SEC SED SEI STA STX STY
-  \ TAX TAY TSX TXA TXS TYA
+" ─── Strings and numbers ─────────────────────────────────────────────────────
+syntax region vbString start=/"/ skip=/\\"/ end=/"/ oneline contains=vbPetscii
+syntax match vbPetscii contained /{[^}]*}/
+syntax match vbHexNumber /\$\x\+/
+syntax match vbBinNumber /\%([[:alnum:]!@#%&?]\)\@<!%[01]\+\>/
+syntax match vbNumber /\<\d\+\%(\.\d\+\)\=\>/
+syntax match vbPi /\%d960/
+" String variables. Defined before the keyword groups so that CHR$, LEFT$ and
+" friends, which are matched later, take precedence.
+syntax match vbStringVar /\<\a[[:alnum:]!@#%&?]*\$/
+" Later definitions win in Vim, so the line number must come after vbNumber.
+syntax match vbLineNumber /^\s*\d\+\ze\%(\s\|$\)/
 
-" ASSEM / BASIC mode switches
-syntax keyword vbAsmSwitch ASSEM BASIC
+" ─── Assembler blocks ────────────────────────────────────────────────────────
+" Machine language lives inside [] brackets; ; starts an ML comment.
+syntax region vbAsmBlock matchgroup=vbAsmDelimiter start=/\[/ end=/\]/ oneline contains=vbAsmMnemonic,vbAsmImmediate,vbHexNumber,vbBinNumber,vbNumber,vbMLComment,vbString
+syntax keyword vbAsmMnemonic contained ADC AND ASL BCC BCS BEQ BIT BMI BNE BPL
+  \ BRK BVC BVS CLC CLD CLI CLV CMP CPX CPY DEC DEX DEY EOR INC INX INY JMP
+  \ JSR LDA LDX LDY LSR NOP ORA PHA PHP PLA PLP ROL ROR RTI RTS SBC SEC SED
+  \ SEI STA STX STY TAX TAY TSX TXA TXS TYA
+syntax match vbAsmImmediate contained /#/
 
-" ─── Strings ─────────────────────────────────────────────────────────────────
-syntax region vbString start=/"/ end=/"/ oneline
+" ─── Definitions and references ──────────────────────────────────────────────
+" Vim matches syntax items left to right and never re-covers consumed text, so
+" these use look-behind rather than \zs: the lead-in is another item already.
+syntax match vbLabelDef /\%(\<DESC\s\+\d\+\s*,\s*\)\@<=\a[[:alnum:]!@#%&?]*/
+syntax match vbLabelDef /\%(\<\%(TAG\|LABEL\|PROC\)\s\+\)\@<=\a[[:alnum:]!@#%&?]*/
+syntax match vbProcCall /\<\a[[:alnum:]!@#%&?]*\ze\.[[:alnum:]$]/
+syntax match vbLineRef /\%(\<\%(GOTO\|GOSUB\|THEN\|ELSE\)\s\+\)\@<=\d\+/
 
-" ─── Numbers ─────────────────────────────────────────────────────────────────
-syntax match vbHexNumber /\$[0-9A-Fa-f]\+/
-syntax match vbNumber /\b\d\+\b/
+" ─── Not implemented by Vision BASIC ─────────────────────────────────────────
+" These BASIC V2 functions are absent from Vision BASIC.
+syntax keyword vbUnimplemented ATN COS EXP FRE LOG POS SIN SQR TAN USR
 
-" ─── Variables ───────────────────────────────────────────────────────────────
-" String variables (end with $)
-syntax match vbStringVar /\b[A-Za-z][A-Za-z0-9!@#%&?]\{0,6\}\$/
-" Tags / labels (used with TAG, DESC, LABEL)
-syntax match vbTag /\b[A-Za-z][A-Za-z0-9!@#%&?]\{0,7\}\b/ contained
+" ─── Assembler mode switches ───────────────────────────────────────────────────
+syntax keyword vbAsmKeyword ASSEM BASIC LABEL START SYS
 
-" ─── Editing Keywords ────────────────────────────────────────────────────────
-syntax keyword vbEditKeyword
-  \ ASSEM BANK BASIC COMP DELETE DESC ERROR EXEC FAST FIND
-  \ LIST LISTER LITE LLIST NEW OLD PLIST QUIT RENUM RUN
-  \ SLOW VLIST
+" ─── Editor & compiler commands ────────────────────────────────────────────────
+syntax keyword vbEditKeyword AUTO COMP CONT DELETE DESC ERROR EXEC FIND HALT
+  \ LIST LISTER LITE LLIST MODULE NEW OLD PLIST PREV QUIT RENUM RESUME RUN
+  \ VLIST
+syntax match vbEditKeyword /\<MODULE\s\+END/
 
-" ─── Disk / File Commands ────────────────────────────────────────────────────
-syntax keyword vbDiskKeyword
-  \ DEVICE DIR DISK GSAVE LOAD SAVE VERIFY
+" ─── IF / THEN / ELSE ──────────────────────────────────────────────────────────
+syntax keyword vbConditional ELSE IF THEN
 
-" ─── Variable Keywords ───────────────────────────────────────────────────────
-syntax keyword vbVarKeyword
-  \ CLR DECIMAL DIM GLOBAL LET LOCAL TAG VARIABLES
+" ─── FOR / NEXT / TO / STEP / DO ───────────────────────────────────────────────
+syntax keyword vbRepeat DO FOR NEXT STEP TO
 
-" ─── Math Keywords ───────────────────────────────────────────────────────────
-syntax keyword vbMathKeyword
-  \ ABS AND OR EOR INT SGN WHOLE FRAC RANDOM RND
-  \ ADD COMPARE DEC DOUBLE HALF INC SUBTRACT
+" ─── Program flow ──────────────────────────────────────────────────────────────
+syntax keyword vbStatement END GOSUB GOTO ON PASS POINT PROC RETURN SEND STOP
+  \ TRAP TREND
 
-" ─── Bitmap Commands ─────────────────────────────────────────────────────────
-syntax keyword vbBitmapKeyword
-  \ BITMAP BMPCLR BMPCOL BMPLOC HLINE LIMITS LINE PLOT VLINE
+" ─── Variable declaration & scope ──────────────────────────────────────────────
+syntax keyword vbType CLR DECIMAL DEF DIM DUBL GLOBAL INTEGER LET LOCAL SUB
+  \ TAG VARIABLES
 
-" ─── Sprite / MOB Commands ───────────────────────────────────────────────────
-syntax keyword vbSpriteKeyword
-  \ ALLMOBS CODE COLLISION DETECT MOB MOBCLR MOBCOL MOBEXP
-  \ MOBPAT MOBSET MOBXY SHAPE
+" ─── Word operators ────────────────────────────────────────────────────────────
+syntax keyword vbOperator AND EOR NOT OR
 
-" ─── Interrupt Commands ──────────────────────────────────────────────────────
-syntax keyword vbInterruptKeyword
-  \ HALTINT INTEND INTERRUPT RASTER STARTINT
+" ─── Math commands & functions ─────────────────────────────────────────────────
+syntax keyword vbMathKeyword ABS ADD COMPARE DEC DOUBLE FN FRAC HALF INC INT
+  \ JOIN RANDOM RND SGN SPLIT SUBTRACT WHOLE
+syntax match vbMathKeyword /\<π/
 
-" ─── Sound / SID Commands ────────────────────────────────────────────────────
-syntax keyword vbSoundKeyword
-  \ ADSR CUTOFF FILTER FREQ PULSE SIDCLR VOICE VOL WAVE
+" ─── String functions ──────────────────────────────────────────────────────────
+syntax keyword vbStringFunc ASC LEN VAL
+syntax match vbStringFunc /\<CHR\$/
+syntax match vbStringFunc /\<DUP\$/
+syntax match vbStringFunc /\<LEFT\$/
+syntax match vbStringFunc /\<MID\$/
+syntax match vbStringFunc /\<RIGHT\$/
+syntax match vbStringFunc /\<STR\$/
 
-" ─── Text Video Commands ─────────────────────────────────────────────────────
-syntax keyword vbVideoKeyword
-  \ BANK BLANK CATCH CHARPAT CHARSET COLORS COPYSET EXTENDED
-  \ LOWERCASE MULTI NORMAL PANX PANY UPPERCASE VIDLOC
+" ─── Bitmap & sprite commands ──────────────────────────────────────────────────
+syntax keyword vbGraphicsKeyword ALLMOBS BITMAP BMPCLR BMPCOL BMPLOC COLLISION
+  \ DETECT HLINE LIMITS LINE MOB MOBCLR MOBCOL MOBEXP MOBPAT MOBSET MOBXY PLOT
+  \ SHAPE VLINE
 
-" ─── Core BASIC Keywords ─────────────────────────────────────────────────────
-syntax keyword vbKeyword
-  \ ASC BUTTON BYTES CHR$ CLOCK CLOSE CLS CMD COPY DATA DEBUG
-  \ DEF DETEXT DO DUP$ ELSE END FETCH FILL FOR GET GOSUB GOTO
-  \ HALT IF INPUT JOIN JOY KEYPRESS LEFT$ LEN LOC LONGPEEK
-  \ LONGPOKE MID$ MODULE NEXT ON OPEN PADBUT PADDLE PAUSE
-  \ PEEK POKE POLL PRINT READ REM RESTORE RESUME RETURN
-  \ REUPEEK REUPOKE RIGHT$ SPC SPLIT STASH STATUS STOP STR$
-  \ STRINGS SWAP SWITCH SYS TAB THEN TRAP VAL VERSION WAIT
-  \ POINT PROC PASS SEND LABEL START
+" ─── SID sound commands ────────────────────────────────────────────────────────
+syntax keyword vbSoundKeyword ADSR CUTOFF FILTER FREQ PULSE SIDCLR VOICE VOL
+  \ WAVE
 
-" ─── Special Constants / Operators ───────────────────────────────────────────
-syntax keyword vbSpecial TO STEP AND OR EOR
-syntax match vbPi /\bπ\b/
+" ─── Text screen commands ──────────────────────────────────────────────────────
+syntax keyword vbScreenKeyword BLANK CATCH CHARPAT CHARSET CLS COLORS COPYSET
+  \ EXTENDED LOC LOWERCASE MULTI NORMAL PANX PANY PRINT SPC TAB UPPERCASE
+  \ VIDLOC
 
-" ─── ML-safe Commands (usable inside assembler blocks) ───────────────────────
-syntax keyword vbMLSafe
-  \ START GOTO GOSUB RETURN REM TAG PROC MODULE LOCAL GLOBAL
-  \ ADD SUBTRACT COMPARE HALF DOUBLE VARIABLES HALT RESUME
-  \ VERSION DEBUG STARTINT RASTER BYTES STRINGS
+" ─── Memory & expansion RAM ────────────────────────────────────────────────────
+syntax keyword vbMemoryKeyword BANK BYTES CODE COPY DETEXT FETCH FILL LONGPEEK
+  \ LONGPOKE PEEK POKE REUPEEK REUPOKE STASH STRINGS SWAP SWITCH
 
-" ─── Highlight Links ─────────────────────────────────────────────────────────
-highlight default link vbLineNumber   Number
-highlight default link vbComment      Comment
-highlight default link vbMLComment    Comment
-highlight default link vbTodo         Todo
-highlight default link vbString       String
-highlight default link vbStringVar    Identifier
-highlight default link vbHexNumber    Number
-highlight default link vbNumber       Number
-highlight default link vbAsmBlock     PreProc
-highlight default link vbAsmMnemonic  Function
-highlight default link vbAsmSwitch    PreProc
-highlight default link vbEditKeyword  Keyword
-highlight default link vbDiskKeyword  Keyword
-highlight default link vbVarKeyword   Type
-highlight default link vbMathKeyword  Function
-highlight default link vbBitmapKeyword Special
-highlight default link vbSpriteKeyword Special
-highlight default link vbInterruptKeyword Special
-highlight default link vbSoundKeyword Special
-highlight default link vbVideoKeyword Special
-highlight default link vbKeyword      Statement
-highlight default link vbMLSafe       Statement
-highlight default link vbSpecial      Operator
-highlight default link vbPi           Constant
+" ─── Disk, file & input commands ───────────────────────────────────────────────
+syntax keyword vbIOKeyword BUTTON CLOSE CMD DEVICE DIR DISK FILE GET GSAVE
+  \ INPUT JOY KEYPRESS LOAD OPEN PADBUT PADDLE POLL SAVE STATUS VERIFY
+syntax match vbIOKeyword /\<GET#/
+syntax match vbIOKeyword /\<INPUT#/
+syntax match vbIOKeyword /\<PRINT#/
+
+" ─── System, timing & interrupts ───────────────────────────────────────────────
+syntax keyword vbSystemKeyword CLOCK DATA DEBUG FAST HALTINT INTEND INTERRUPT
+  \ PAUSE RASTER READ RESTORE SLOW STARTINT VERSION WAIT
+syntax match vbSystemKeyword /\<POINT\s\+TAG/
+
+" ─── ML-safe commands ────────────────────────────────────────────────────────
+" Commands that remain usable inside an ASSEM block. Highlighting is provided
+" by the groups above; the list is exposed for :help and for ftplugin use.
+let b:visionbasic_ml_safe = ['START', 'GOTO', 'GOSUB', 'RETURN', 'REM', 'TAG', 'PROC', 'MODULE', 'LOCAL', 'GLOBAL', 'ADD', 'SUBTRACT', 'COMPARE', 'HALF', 'DOUBLE', 'VARIABLES', 'HALT', 'RESUME', 'VERSION', 'DEBUG', 'STARTINT', 'RASTER', 'BYTES', 'STRINGS']
+
+" ─── Highlight links ─────────────────────────────────────────────────────────
+highlight default link vbLineNumber    Number
+highlight default link vbLineRef       Number
+highlight default link vbComment       Comment
+highlight default link vbCommentKeyword Comment
+highlight default link vbMLComment     Comment
+highlight default link vbTodo          Todo
+highlight default link vbString        String
+highlight default link vbStringVar     Identifier
+highlight default link vbPetscii       SpecialChar
+highlight default link vbHexNumber     Number
+highlight default link vbBinNumber     Number
+highlight default link vbNumber        Number
+highlight default link vbPi            Constant
+highlight default link vbAsmBlock      Normal
+highlight default link vbAsmDelimiter  Delimiter
+highlight default link vbAsmMnemonic   Operator
+highlight default link vbAsmImmediate  Delimiter
+highlight default link vbLabelDef      Function
+highlight default link vbProcCall      Function
+highlight default link vbUnimplemented Error
+highlight default link vbAsmKeyword       PreProc
+highlight default link vbEditKeyword      Keyword
+highlight default link vbConditional      Conditional
+highlight default link vbRepeat           Repeat
+highlight default link vbStatement        Statement
+highlight default link vbType             Type
+highlight default link vbOperator         Operator
+highlight default link vbMathKeyword      Function
+highlight default link vbStringFunc       Function
+highlight default link vbGraphicsKeyword  Special
+highlight default link vbSoundKeyword     Special
+highlight default link vbScreenKeyword    Special
+highlight default link vbMemoryKeyword    Special
+highlight default link vbIOKeyword        Keyword
+highlight default link vbSystemKeyword    Special
+
+" Legacy group names from earlier releases of this plugin.
+highlight default link vbDiskKeyword      vbIOKeyword
+highlight default link vbVarKeyword       vbType
+highlight default link vbBitmapKeyword    vbGraphicsKeyword
+highlight default link vbSpriteKeyword    vbGraphicsKeyword
+highlight default link vbInterruptKeyword vbSystemKeyword
+highlight default link vbVideoKeyword     vbScreenKeyword
+highlight default link vbKeyword          vbStatement
+highlight default link vbAsmSwitch        vbAsmKeyword
+highlight default link vbSpecial          vbOperator
 
 let b:current_syntax = 'visionbasic'
